@@ -1,0 +1,170 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>最终幻想14文件结构分析(2) - 心之所向</title><meta name=renderer content="webkit"><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><meta http-equiv=cache-control content="no-transform"><meta http-equiv=cache-control content="no-siteapp"><meta name=theme-color content="#f8f5ec"><meta name=msapplication-navbutton-color content="#f8f5ec"><meta name=apple-mobile-web-app-capable content="yes"><meta name=apple-mobile-web-app-status-bar-style content="#f8f5ec"><meta name=author content="Zhengguang Chen"><meta name=description content="基本概念 我们可以想象最终幻想14的数据是一个大型的目录结构，其中分门别类地存储了游戏需要的各种资源，比如着色器，贴图，模型，对话文本信息等等"><meta name=keywords content="个人,博客,技术"><meta name=generator content="Hugo 0.107.0 with theme even"><link rel=canonical href=https://blog.cerrorism.com/post/2020-10-25/><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/manifest.json><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><link href=/sass/main.min.f92fd13721ddf72129410fd8250e73152cc6f2438082b6c0208dc24ee7c13fc4.css rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin=anonymous><meta property="og:title" content="最终幻想14文件结构分析(2)"><meta property="og:description" content="基本概念 我们可以想象最终幻想14的数据是一个大型的目录结构，其中分门别类地存储了游戏需要的各种资源，比如着色器，贴图，模型，对话文本信息等等"><meta property="og:type" content="article"><meta property="og:url" content="https://blog.cerrorism.com/post/2020-10-25/"><meta property="article:section" content="post"><meta property="article:published_time" content="2020-10-25T08:54:48-07:00"><meta property="article:modified_time" content="2020-10-25T08:54:48-07:00"><meta itemprop=name content="最终幻想14文件结构分析(2)"><meta itemprop=description content="基本概念 我们可以想象最终幻想14的数据是一个大型的目录结构，其中分门别类地存储了游戏需要的各种资源，比如着色器，贴图，模型，对话文本信息等等"><meta itemprop=datePublished content="2020-10-25T08:54:48-07:00"><meta itemprop=dateModified content="2020-10-25T08:54:48-07:00"><meta itemprop=wordCount content="2369"><meta itemprop=keywords content><meta name=twitter:card content="summary"><meta name=twitter:title content="最终幻想14文件结构分析(2)"><meta name=twitter:description content="基本概念 我们可以想象最终幻想14的数据是一个大型的目录结构，其中分门别类地存储了游戏需要的各种资源，比如着色器，贴图，模型，对话文本信息等等"><!--[if lte IE 9]><script src=https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js></script><![endif]--><!--[if lt IE 9]><script src=https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js></script>
+<script src=https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js></script><![endif]--></head><body><div id=mobile-navbar class=mobile-navbar><div class=mobile-header-logo><a href=/ class=logo>心之所向</a></div><div class=mobile-navbar-icon><span></span>
+<span></span>
+<span></span></div></div><nav id=mobile-menu class="mobile-menu slideout-menu"><ul class=mobile-menu-list><a href=/><li class=mobile-menu-item>主页</li></a><a href=/post/><li class=mobile-menu-item>博客</li></a><a href=/about/><li class=mobile-menu-item>关于</li></a></ul></nav><div class=container id=mobile-panel><header id=header class=header><div class=logo-wrapper><a href=/ class=logo>心之所向</a></div><nav class=site-navbar><ul id=menu class=menu><li class=menu-item><a class=menu-item-link href=/>主页</a></li><li class=menu-item><a class=menu-item-link href=/post/>博客</a></li><li class=menu-item><a class=menu-item-link href=/about/>关于</a></li></ul></nav></header><main id=main class=main><div class=content-wrapper><div id=content class=content><article class=post><header class=post-header><h1 class=post-title>最终幻想14文件结构分析(2)</h1><div class=post-meta><span class=post-time>2020-10-25</span></div></header><div class=post-content><h2 id=基本概念>基本概念</h2><p>我们可以想象最终幻想14的数据是一个大型的目录结构，其中分门别类地存储了游戏需要的各种资源，比如着色器，贴图，模型，对话文本信息等等。这些资源
+有大有小，很多只有几十上百个字节而已。直接把这些数据用文件的形式单独保存，是一种不太经济的做法。最终幻想14的做法是把这些资源文件分门别类进行
+打包，变成一个个很大的文件。在这些大文件之中，利用一些索引信息，自己做出一个小的文件目录结构，以便于随时跳转到需要的文件位置。这种打包格式，就
+是<code>SqPack</code>。这也就是为什么所有FF14的数据文件都位于<code>/game/sqpack/</code>目录下。要想从游戏数据文件中挖掘出一些有用的信息，了解<code>SqPack</code>格式是
+必不可少的步骤。首先，我们要厘清关于SqPack的几个基本概念。</p><h3 id=仓库>仓库</h3><p>目前FF14的数据文件分为了四个仓库，也就是我们之前看到的位于<code>/game/sqpac</code>k目录下的四个文件夹: <code>ffxiv</code>, <code>ex1</code>, <code>ex2</code>, <code>ex3</code>。可以看出，每个
+大型的资料片，都会带有自己独有的仓库。但是每个资料片也会给<code>ffxi</code>v这个共有的仓库里添加很多信息。</p><h3 id=类型>类型</h3><p>在每个仓库下，我们都能看到很多<code>dat</code>文件，这些就是<code>SqPack</code>格式的数据文件。而文件的名字，则是数据的类型。其中<code>000000</code>代表一些通用的资源，比如
+字体，UI相关的贴图等等。<code>0a0000</code>则包括了所有的文本信息，比如任务记录，对话，和物品描述等等。我们接下来会从<code>0a0000</code>这个文件开始探索。</p><h3 id=索引文件>索引文件</h3><p>我们虽然可以直接读取<code>dat</code>文件，但是这意味着我们只能线性的扫描所有的文件，顺序的读取数据。而我们在游戏中对资源进行访问，很多时候要求能够随机读取
+某个特定的数据。这时候，索引文件就能帮上忙，快速的定位我们需要的数据在<code>dat</code>文件中的哪个位置。</p><h2 id=sqpack文件结构><code>SqPack</code>文件结构</h2><p>接下来我们来看看<code>SqPack</code>文件的结构。首先，所有的<code>SqPack</code>文件都是小端序(Little Endian)的，而默认情况下Java的ByteBuffer是大端序(Big Endian)的，
+所以我们在读取文件的时候要手动设置一下。以下的例程是以<code>Kotlin</code>为例的代码片段。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Kotlin data-lang=Kotlin><span class=line><span class=cl><span class=k>val</span> <span class=py>path</span> <span class=p>=</span> <span class=s2>&#34;&lt;FF14 Path&gt;/game/sqpack/ffxiv/000000.win32.dat0&#34;</span>
+</span></span><span class=line><span class=cl><span class=k>val</span> <span class=py>fileContent</span> <span class=p>=</span> <span class=nc>ByteBuffer</span><span class=p>.</span><span class=n>wrap</span><span class=p>(</span><span class=n>File</span><span class=p>(</span><span class=n>path</span><span class=p>).</span><span class=n>readBytes</span><span class=p>()).</span><span class=n>order</span><span class=p>(</span><span class=nc>ByteOrder</span><span class=p>.</span><span class=n>LITTLE_ENDIAN</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>这时数据文件的所有内容就存储在<code>fileContent</code>变量里了。</p><p>每个<code>SqPack</code>文件都包含一个文件头，这个文件头有如下信息：</p><ol><li>一个固定的字符串<code>SqPack</code>，表明文件的类型。注意虽然这个字符串只有六个字符，但为了提高读取的性能，这个字符串的末尾包含了两个填充的零字符。这样这个
+文件类型域就是八个字节了。这种由于性能原因<code>填充(Padding)</code>的情况，我们在之后会经常遇到。</li><li>平台标志，表示游戏的平台。这里我们主要关注<code>Windows</code>平台，所以这个位置一定是零。同样，虽然只用一个字节就可以表示多达八个不同的平台，但这个域还是被
+填充了三个空字符，变成了四个字节。</li><li>文件头大小。这是一个四字节整数，表示文件头在哪里结束，也就是一个偏移量。文件包含的数据是从这个偏移量开始的。</li><li>版本号。同样是一个四字节整数。</li><li>文件类型。这里可以是<code>dat</code>文件或者是<code>index</code>文件。<code>1</code>表示数据文件，<code>2</code>表示索引文件。</li></ol><p>我们再次使用<code>Kotlin</code>来读取上述的信息。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Kotlin data-lang=Kotlin><span class=line><span class=cl><span class=k>val</span> <span class=py>byteArray</span> <span class=p>=</span> <span class=n>ByteArray</span><span class=p>(</span><span class=m>8</span><span class=p>)</span> <span class=c1>// 八个字节的文件头标识
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=n>fileContent</span><span class=p>.</span><span class=k>get</span><span class=p>(</span><span class=n>byteArray</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=k>val</span> <span class=py>headerString</span> <span class=p>=</span> <span class=n>String</span><span class=p>(</span><span class=n>byteArray</span><span class=p>)</span> <span class=c1>// headerString = &#34;SqPack&#34;
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>val</span> <span class=py>platform</span> <span class=p>=</span> <span class=n>fileContent</span><span class=p>.</span><span class=n>int</span> <span class=c1>// platform = 0
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>val</span> <span class=py>headerSize</span> <span class=p>=</span> <span class=n>fileContent</span><span class=p>.</span><span class=n>int</span> <span class=c1>// headerSize = 1024
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>val</span> <span class=py>version</span> <span class=p>=</span> <span class=n>fileContent</span><span class=p>.</span><span class=n>int</span> <span class=c1>// version = 1
+</span></span></span><span class=line><span class=cl><span class=c1></span><span class=k>val</span> <span class=py>fileType</span> <span class=p>=</span> <span class=n>fileContent</span><span class=p>.</span><span class=n>int</span> <span class=c1>// fileType = 1
+</span></span></span></code></pre></td></tr></table></div></div><p>其中需要讲解一下的是，<code>ByteBuffer.int</code>是<code>Kotlin</code>的一个简化<code>Java</code>函数调用的语法糖。所有的<code>.getXXX()</code>函数都可以简写为<code>.XXX</code>这样的属性形式调用。所以
+<code>fileContent.int</code>实际上也就是<code>fileContent.getInt()</code>，会移动当前读取位置，非常方便。</p><h2 id=利用kotlin语法糖和反射制作一个基于data类型的结构读取>利用<code>Kotlin</code>语法糖和反射，制作一个基于<code>data</code>类型的结构读取</h2><p>通过上面的代码我们可以看到，如果一个存储的数据结构比较复杂，域比较多，那么读取的代码就会很繁琐，写多了也很容易出错，比如顺序不对之类的。我们之后还要通过
+<code>ByteBuffer</code>来读取更多的数据结构，比如<code>index</code>文件中的目录结构，<code>dat</code>文件中的文件结构等等。所以，在开始这些工作之前，我们不妨稍稍停下脚步，回到基本的语
+言层面，写一个简单的反序列化机制，让我们可以更容易的读取结构化数据。</p><p>我们的目标是，在<code>Kotlin</code>语言里，我们能够定义如下的数据结构。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Kotlin data-lang=Kotlin><span class=line><span class=cl><span class=k>data</span> <span class=k>class</span> <span class=nc>SqPackHeader</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>header</span><span class=p>:</span> <span class=n>String</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>platform</span><span class=p>:</span> <span class=n>Int</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>headerSize</span><span class=p>:</span> <span class=n>Int</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>version</span><span class=p>:</span> <span class=n>Int</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>fileType</span><span class=p>:</span> <span class=n>Int</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>然后，我们需要写一个直接读取这个数据结构的简单函数，使得我们可以写如下的代码。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Kotlin data-lang=Kotlin><span class=line><span class=cl><span class=k>val</span> <span class=py>header</span> <span class=p>=</span> <span class=n>fileContent</span><span class=p>.</span><span class=n>read</span><span class=p>(</span><span class=n>SqPackHeader</span><span class=o>::</span><span class=k>class</span><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>那么，如何实现这个函数呢？首先，我们把支持的类型提前列出来。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Kotlin data-lang=Kotlin><span class=line><span class=cl><span class=k>object</span> <span class=nc>SupportedTypes</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>IntType</span> <span class=p>=</span> <span class=n>Int</span><span class=o>::</span><span class=k>class</span><span class=p>.</span><span class=n>createType</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>ShortType</span> <span class=p>=</span> <span class=n>Short</span><span class=o>::</span><span class=k>class</span><span class=p>.</span><span class=n>createType</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>LongType</span> <span class=p>=</span> <span class=n>Long</span><span class=o>::</span><span class=k>class</span><span class=p>.</span><span class=n>createType</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=k>val</span> <span class=py>ByteType</span> <span class=p>=</span> <span class=n>Byte</span><span class=o>::</span><span class=k>class</span><span class=p>.</span><span class=n>createType</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>然后，当我们要读取一个<code>Kotlin</code>的类型，我们可以利用<code>Kotlin</code>的反射机制来自动填充每个域。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Kotlin data-lang=Kotlin><span class=line><span class=cl><span class=k>fun</span><span class=p>&lt;</span><span class=n>T</span><span class=p>:</span> <span class=n>Any</span><span class=p>&gt;</span> <span class=nc>ByteBuffer</span><span class=p>.</span><span class=n>read</span><span class=p>(</span><span class=n>kClass</span><span class=p>:</span> <span class=n>KClass</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;):</span> <span class=n>T</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>constructor</span> <span class=p>=</span> <span class=n>kClass</span><span class=p>.</span><span class=n>primaryConstructor</span><span class=o>!!</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>parameters</span> <span class=p>=</span> <span class=k>constructor</span><span class=p>.</span><span class=n>parameters</span><span class=p>.</span><span class=n>map</span> <span class=p>{</span> <span class=n>p</span> <span class=o>-&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=k>when</span> <span class=p>(</span><span class=n>p</span><span class=p>.</span><span class=n>type</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>      <span class=nc>SupportedTypes</span><span class=p>.</span><span class=n>LongType</span> <span class=o>-&gt;</span> <span class=n>long</span> <span class=c1>// this is getLong()
+</span></span></span><span class=line><span class=cl><span class=c1></span>      <span class=nc>SupportedTypes</span><span class=p>.</span><span class=n>IntType</span> <span class=o>-&gt;</span> <span class=n>int</span> <span class=c1>// this is getInt()
+</span></span></span><span class=line><span class=cl><span class=c1></span>      <span class=nc>SupportedTypes</span><span class=p>.</span><span class=n>ShortType</span> <span class=o>-&gt;</span> <span class=n>short</span> <span class=c1>// this is getShort()
+</span></span></span><span class=line><span class=cl><span class=c1></span>      <span class=nc>SupportedTypes</span><span class=p>.</span><span class=n>ByteType</span> <span class=o>-&gt;</span> <span class=k>get</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span> <span class=k>constructor</span><span class=p>.</span><span class=n>call</span><span class=p>(*</span><span class=n>parameters</span><span class=p>.</span><span class=n>toTypedArray</span><span class=p>())</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>可是，这里有个问题，我们的这个函数不支持<code>String</code>域。和<code>Int</code>、<code>Long</code>这样的基本类型不同，<code>String</code>域的难点在于，我们单纯根据参数类型是没法知道到底要读取
+几个字节的。所以我们需要一些额外的输入信息。在<code>JVM</code>中，一种常见的提供额外信息的机制就是<code>标注(Annotation)</code>。我们用标注对上面的<code>SqPackHeader</code>类进行加强：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Kotlin data-lang=Kotlin><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>annotation</span> <span class=k>class</span> <span class=nc>FieldDescription</span><span class=p>(</span><span class=k>val</span> <span class=py>size</span><span class=p>:</span> <span class=n>Int</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>data</span> <span class=k>class</span> <span class=nc>SqPackHeader</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=nd>@FieldDescription</span><span class=p>(</span><span class=n>size</span> <span class=p>=</span> <span class=m>8</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>header</span><span class=p>:</span> <span class=n>String</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>platform</span><span class=p>:</span> <span class=n>Int</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>headerSize</span><span class=p>:</span> <span class=n>Int</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>version</span><span class=p>:</span> <span class=n>Int</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>fileType</span><span class=p>:</span> <span class=n>Int</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样，我们就可以利用额外的信息来读取<code>String</code>了。首先就是把<code>String</code>也列入我们支持的类型列表。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Kotlin data-lang=Kotlin><span class=line><span class=cl><span class=k>object</span> <span class=nc>SupportedTypes</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=k>val</span> <span class=py>StringType</span> <span class=p>=</span> <span class=n>String</span><span class=o>::</span><span class=k>class</span><span class=p>.</span><span class=n>createType</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>然后在需要读取<code>String</code>的时候，我们需要拿到标注的信息。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Kotlin data-lang=Kotlin><span class=line><span class=cl><span class=k>fun</span><span class=p>&lt;</span><span class=n>T</span><span class=p>:</span> <span class=n>Any</span><span class=p>&gt;</span> <span class=nc>ByteBuffer</span><span class=p>.</span><span class=n>read</span><span class=p>(</span><span class=n>kClass</span><span class=p>:</span> <span class=n>KClass</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;):</span> <span class=n>T</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>constructor</span> <span class=p>=</span> <span class=n>kClass</span><span class=p>.</span><span class=n>primaryConstructor</span><span class=o>!!</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>parameters</span> <span class=p>=</span> <span class=k>constructor</span><span class=p>.</span><span class=n>parameters</span><span class=p>.</span><span class=n>map</span> <span class=p>{</span> <span class=n>p</span> <span class=o>-&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=k>when</span> <span class=p>(</span><span class=n>p</span><span class=p>.</span><span class=n>type</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>      <span class=nc>SupportedType</span><span class=p>.</span><span class=n>StringType</span> <span class=o>-&gt;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>firstAnnotation</span> <span class=p>=</span> <span class=n>p</span><span class=p>.</span><span class=n>annotations</span><span class=p>.</span><span class=n>firstOrNull</span><span class=p>()</span> <span class=k>as</span> <span class=n>FieldDescription</span><span class=p>?</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>fieldDescription</span> <span class=p>=</span> <span class=n>firstAnnotation</span> <span class=o>?:</span> <span class=k>throw</span> <span class=n>RuntimeException</span><span class=p>(</span><span class=s2>&#34;String field without FieldDescription annotation&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>val</span> <span class=py>data</span> <span class=p>=</span> <span class=n>ByteArray</span><span class=p>(</span><span class=n>fieldDescription</span><span class=p>.</span><span class=n>size</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>get</span><span class=p>(</span><span class=k>data</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>String</span><span class=p>(</span><span class=k>data</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>      <span class=p>}</span>
+</span></span><span class=line><span class=cl>      <span class=c1>// ...
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span> <span class=k>constructor</span><span class=p>.</span><span class=n>call</span><span class=p>(*</span><span class=n>parameters</span><span class=p>.</span><span class=n>toTypedArray</span><span class=p>())</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>类似的，我们还可以用同样的方法支持<code>ByteArray</code>类型的域。</p></div><footer class=post-footer><nav class=post-nav><a class=prev href=/post/2021-01-24/><i class="iconfont icon-left"></i>
+<span class="prev-text nav-default">在AWS上使用EMR创建一个简单的数据湖（1）</span>
+<span class="prev-text nav-mobile">上一篇</span></a>
+<a class=next href=/post/2020-10-04/><span class="next-text nav-default">最终幻想14文件结构分析(1)</span>
+<span class="next-text nav-mobile">下一篇</span>
+<i class="iconfont icon-right"></i></a></nav></footer></article></div></div></main><footer id=footer class=footer><div class=social-links><a href=cerrorism@gmail.com class="iconfont icon-email" title=email></a>
+<a href=https://linkedin.com/in/zhengguang-chen-a4a4b430 class="iconfont icon-linkedin" title=linkedin></a>
+<a href=https://github.com/cerrorism class="iconfont icon-github" title=github></a>
+<a href=https://www.zhihu.com/people/chen-zheng-guang class="iconfont icon-zhihu" title=zhihu></a>
+<a href=https://space.bilibili.com/1614504 class="iconfont icon-bilibili" title=bilibili></a>
+<a href=https://blog.cerrorism.com/index.xml type=application/rss+xml class="iconfont icon-rss" title=rss></a></div><div class=copyright><span class=power-by>由 <a class=hexo-link href=https://gohugo.io>Hugo</a> 强力驱动</span>
+<span class=division>|</span>
+<span class=theme-info>主题 -
+<a class=theme-link href=https://github.com/olOwOlo/hugo-theme-even>Even</a></span>
+<span class=copyright-year>&copy;
+2020 -
+2022<span class=heart><i class="iconfont icon-heart"></i></span><span>Zhengguang Chen</span></span></div></footer><div class=back-to-top id=back-to-top><i class="iconfont icon-up"></i></div></div><script src=https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin=anonymous></script>
+<script src=https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin=anonymous></script>
+<script src=https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin=anonymous></script>
+<script type=text/javascript src=/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js></script>
+<script src=/js/mermaid.min.js></script></body></html>

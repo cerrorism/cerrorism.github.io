@@ -1,0 +1,522 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>在AWS上使用EMR创建一个简单的数据湖（3） - 心之所向</title><meta name=renderer content="webkit"><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><meta http-equiv=cache-control content="no-transform"><meta http-equiv=cache-control content="no-siteapp"><meta name=theme-color content="#f8f5ec"><meta name=msapplication-navbutton-color content="#f8f5ec"><meta name=apple-mobile-web-app-capable content="yes"><meta name=apple-mobile-web-app-status-bar-style content="#f8f5ec"><meta name=author content="Zhengguang Chen"><meta name=description content="好的，当我们辛辛苦苦创建了EMR集群之后，有两个问题我们需要解决。第一，我们现在的EMR还没有权限访问S3，也就是说只能自娱自乐，搞些Wor"><meta name=keywords content="个人,博客,技术"><meta name=generator content="Hugo 0.107.0 with theme even"><link rel=canonical href=https://blog.cerrorism.com/post/2021-01-29/><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/manifest.json><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><link href=/sass/main.min.f92fd13721ddf72129410fd8250e73152cc6f2438082b6c0208dc24ee7c13fc4.css rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin=anonymous><meta property="og:title" content="在AWS上使用EMR创建一个简单的数据湖（3）"><meta property="og:description" content="好的，当我们辛辛苦苦创建了EMR集群之后，有两个问题我们需要解决。第一，我们现在的EMR还没有权限访问S3，也就是说只能自娱自乐，搞些Wor"><meta property="og:type" content="article"><meta property="og:url" content="https://blog.cerrorism.com/post/2021-01-29/"><meta property="article:section" content="post"><meta property="article:published_time" content="2021-01-29T10:44:40-08:00"><meta property="article:modified_time" content="2021-01-29T10:44:40-08:00"><meta itemprop=name content="在AWS上使用EMR创建一个简单的数据湖（3）"><meta itemprop=description content="好的，当我们辛辛苦苦创建了EMR集群之后，有两个问题我们需要解决。第一，我们现在的EMR还没有权限访问S3，也就是说只能自娱自乐，搞些Wor"><meta itemprop=datePublished content="2021-01-29T10:44:40-08:00"><meta itemprop=dateModified content="2021-01-29T10:44:40-08:00"><meta itemprop=wordCount content="2682"><meta itemprop=keywords content><meta name=twitter:card content="summary"><meta name=twitter:title content="在AWS上使用EMR创建一个简单的数据湖（3）"><meta name=twitter:description content="好的，当我们辛辛苦苦创建了EMR集群之后，有两个问题我们需要解决。第一，我们现在的EMR还没有权限访问S3，也就是说只能自娱自乐，搞些Wor"><!--[if lte IE 9]><script src=https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js></script><![endif]--><!--[if lt IE 9]><script src=https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js></script>
+<script src=https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js></script><![endif]--></head><body><div id=mobile-navbar class=mobile-navbar><div class=mobile-header-logo><a href=/ class=logo>心之所向</a></div><div class=mobile-navbar-icon><span></span>
+<span></span>
+<span></span></div></div><nav id=mobile-menu class="mobile-menu slideout-menu"><ul class=mobile-menu-list><a href=/><li class=mobile-menu-item>主页</li></a><a href=/post/><li class=mobile-menu-item>博客</li></a><a href=/about/><li class=mobile-menu-item>关于</li></a></ul></nav><div class=container id=mobile-panel><header id=header class=header><div class=logo-wrapper><a href=/ class=logo>心之所向</a></div><nav class=site-navbar><ul id=menu class=menu><li class=menu-item><a class=menu-item-link href=/>主页</a></li><li class=menu-item><a class=menu-item-link href=/post/>博客</a></li><li class=menu-item><a class=menu-item-link href=/about/>关于</a></li></ul></nav></header><main id=main class=main><div class=content-wrapper><div id=content class=content><article class=post><header class=post-header><h1 class=post-title>在AWS上使用EMR创建一个简单的数据湖（3）</h1><div class=post-meta><span class=post-time>2021-01-29</span></div></header><div class=post-content><p>好的，当我们辛辛苦苦创建了EMR集群之后，有两个问题我们需要解决。第一，我们现在的EMR还没有权限访问S3，也就是说只能自娱自乐，搞些WordCount之类的玩具任务。第二，由于传统集群的“优良传统”，我们每次提交新的任务，都要远程登陆到EMR集群的某台机器上，把我们需要提交的Jar包拷贝上去，再用类似<code>spark-submit</code>这样的命令行来运行。全程都需要人工参与，毫无人工智能的爽感啊。接下来我们一个一个解决问题。</p><h2 id=让emr能够访问s3>让EMR能够访问S3</h2><p>要让EMR能够访问S3，我们需要给EMR的机器一个拥有适当权限的IAM角色。那么我们就看看具体需要什么权限吧。另外，写入日志也需要适当的权限，这里我们就一起处理了。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Terraform data-lang=Terraform><span class=line><span class=cl><span class=kr>data</span> <span class=s2>&#34;aws_iam_policy_document&#34;</span> <span class=s2>&#34;emr_instance_assume_role&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=nx>statement</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>principals</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>      <span class=na>type</span>        = <span class=s2>&#34;Service&#34;</span>
+</span></span><span class=line><span class=cl>      <span class=na>identifiers</span> = <span class=p>[</span><span class=s2>&#34;ec2.amazonaws.com&#34;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=na>actions</span> = <span class=p>[</span><span class=s2>&#34;sts:AssumeRole&#34;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=kr>
+</span></span></span><span class=line><span class=cl><span class=kr>resource</span> <span class=s2>&#34;aws_iam_role&#34;</span> <span class=s2>&#34;emr_instance_role&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=na>name</span>               = <span class=s2>&#34;</span><span class=si>${</span><span class=nb>var</span><span class=p>.</span><span class=nx>team_name</span><span class=si>}</span><span class=s2>-emr-instance-role-</span><span class=si>${</span><span class=nb>var</span><span class=p>.</span><span class=nx>environment</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=na>assume_role_policy</span> = <span class=nb>data</span><span class=p>.</span><span class=nx>aws_iam_policy_document</span><span class=p>.</span><span class=nx>emr_instance_assume_role</span><span class=p>.</span><span class=nx>json</span>
+</span></span><span class=line><span class=cl>  <span class=na>tags</span>               = <span class=nx>local</span><span class=p>.</span><span class=nx>common</span><span class=p>.</span><span class=nx>tags</span>
+</span></span><span class=line><span class=cl>  <span class=na>path</span>               = <span class=s2>&#34;/</span><span class=si>${</span><span class=nb>var</span><span class=p>.</span><span class=nx>team_name</span><span class=si>}</span><span class=s2>/&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=kr>
+</span></span></span><span class=line><span class=cl><span class=kr>data</span> <span class=s2>&#34;aws_iam_policy_document&#34;</span> <span class=s2>&#34;data_access_policy&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=nx>statement</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=na>actions</span> = <span class=p>[</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:AbortMultipartUpload&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:CreateBucket&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:DeleteObject&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:GetBucketVersioning&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:GetObject&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:GetObjectTagging&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:GetObjectVersion&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:ListBucket&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:ListBucketMultipartUploads&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:ListBucketVersions&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:ListMultipartUploadParts&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:ListObjects&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:ListObjectsV2&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:PutBucketVersioning&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:PutObject&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;s3:PutObjectTagging&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=na>resources</span> = <span class=p>[</span>
+</span></span><span class=line><span class=cl>      <span class=nx>aws_s3_bucket</span><span class=p>.</span><span class=nb>data</span><span class=p>.</span><span class=nx>arn</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=nx>aws_s3_bucket</span><span class=p>.</span><span class=nx>emr_log</span><span class=p>.</span><span class=nx>arn</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;</span><span class=si>${</span><span class=nx>aws_s3_bucket</span><span class=p>.</span><span class=nb>data</span><span class=p>.</span><span class=nx>arn</span><span class=si>}</span><span class=s2>/*&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;</span><span class=si>${</span><span class=nx>aws_s3_bucket</span><span class=p>.</span><span class=nx>emr_log</span><span class=p>.</span><span class=nx>arn</span><span class=si>}</span><span class=s2>/*&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=p>]</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=kr>
+</span></span></span><span class=line><span class=cl><span class=kr>resource</span> <span class=s2>&#34;aws_iam_policy&#34;</span> <span class=s2>&#34;data_access_policy&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=na>name</span>        = <span class=s2>&#34;</span><span class=si>${</span><span class=nb>var</span><span class=p>.</span><span class=nx>team_name</span><span class=si>}</span><span class=s2>-emr-instance-policy-</span><span class=si>${</span><span class=nb>var</span><span class=p>.</span><span class=nx>environment</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=na>path</span>        = <span class=s2>&#34;/</span><span class=si>${</span><span class=nb>var</span><span class=p>.</span><span class=nx>team_name</span><span class=si>}</span><span class=s2>/&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=na>description</span> = <span class=s2>&#34;s3 access policy for EMR&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=na>policy</span>      = <span class=nb>data</span><span class=p>.</span><span class=nx>aws_iam_policy_document</span><span class=p>.</span><span class=nb>data</span><span class=err>_</span><span class=nx>access_policy</span><span class=p>.</span><span class=nx>json</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=kr>
+</span></span></span><span class=line><span class=cl><span class=kr>resource</span> <span class=s2>&#34;aws_iam_role_policy_attachment&#34;</span> <span class=s2>&#34;emr_service_role_policy_attachment&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=na>role</span>       = <span class=nx>aws_iam_role</span><span class=p>.</span><span class=nx>emr_service_role</span><span class=p>.</span><span class=nx>name</span>
+</span></span><span class=line><span class=cl>  <span class=na>policy_arn</span> = <span class=nx>aws</span><span class=p>.</span><span class=nx>aws_iam_policy</span><span class=p>.</span><span class=nb>data</span><span class=err>_</span><span class=nx>access_policy</span><span class=p>.</span><span class=nx>arn</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>一样，创建空白角色，创建策略，将策略绑定到角色，一气呵成。最后，我们将这个角色应用到EMR上去。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Terraform data-lang=Terraform><span class=line><span class=cl><span class=kr>
+</span></span></span><span class=line><span class=cl><span class=kr>resource</span> <span class=s2>&#34;aws_iam_instance_profile&#34;</span> <span class=s2>&#34;emr_instance_profile&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=na>name</span> = <span class=s2>&#34;</span><span class=si>${</span><span class=nb>var</span><span class=p>.</span><span class=nx>team_name</span><span class=si>}</span><span class=s2>-emr-instance-profile-</span><span class=si>${</span><span class=nb>var</span><span class=p>.</span><span class=nx>environment</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=na>role</span> = <span class=nx>aws</span><span class=p>.</span><span class=nx>aws_iam_policy</span><span class=p>.</span><span class=nb>data</span><span class=err>_</span><span class=nx>access_policy</span><span class=p>.</span><span class=nx>name</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=kr>
+</span></span></span><span class=line><span class=cl><span class=kr>resource</span> <span class=s2>&#34;aws_emr_cluster&#34;</span> <span class=s2>&#34;etl_cluster&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=p>...</span>
+</span></span><span class=line><span class=cl>  <span class=nx>ec2_attributes</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=na>instance_profile</span> = <span class=nx>aws</span><span class=p>.</span><span class=nx>aws_iam_instance_profile</span><span class=p>.</span><span class=nx>emr_instance_profile</span><span class=p>.</span><span class=nx>arn</span>
+</span></span><span class=line><span class=cl>    <span class=p>...</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>我其实不是很喜欢这种设计，一层套一层。但是这样还是对策略的复用有好处的。既然代价已经付出了，那么以后再创建新的策略的时候，记得要复用角色啊。无论如何，现在我们的EMR集群就可以访问S3了。在Spark任务中，我们可以用以下这样的代码来写入和读取S3数据。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Scala data-lang=Scala><span class=line><span class=cl><span class=k>val</span> <span class=n>dataset</span> <span class=k>=</span> <span class=n>spark</span><span class=o>.</span><span class=n>write</span><span class=o>.</span><span class=n>parquet</span><span class=o>(</span><span class=s>&#34;s3://&lt;bucket-name&gt;/path&#34;</span><span class=o>)</span>
+</span></span><span class=line><span class=cl><span class=c1>// use dataset as normal
+</span></span></span></code></pre></td></tr></table></div></div><p>有了IAM角色的帮助，我们不用在Spark的配置中担心S3的各种密钥，所有的访问权限管理都交给了IAM。</p><p>但是，我们这样做只是把S3作为一个非常简单的文件系统来用，这个在大部分时候是不够用的。当我们用惯了Hive大数据库，和各种方便的SQL查询之后，再回归文件访问，总会有一种一朝回到解放前的感觉。因此，我们需要AWS Glue的帮助，给我们的S3提供一个类似于Hive的接口。</p><p>我们首先创建一个空白的Glue目录，也可以叫做一个数据库。我们之后创建的所有表都会在这个数据库中。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Terraform data-lang=Terraform><span class=line><span class=cl><span class=kr>resource</span> <span class=s2>&#34;aws_glue_catalog_database&#34;</span> <span class=s2>&#34;database&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=na>name</span> = <span class=s2>&#34;</span><span class=si>${</span><span class=nb>var</span><span class=p>.</span><span class=nx>team_name</span><span class=si>}</span><span class=s2>-glue-database-</span><span class=si>${</span><span class=nb>var</span><span class=p>.</span><span class=nx>environment</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>之后，我们需要给EMR以访问Glue的权限。由于这个权限也是访问数据不可或缺的一部分，我们直接将权限添加到之前创建的<code>data_access_policy</code>策略中。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Terraform data-lang=Terraform><span class=line><span class=cl><span class=kr>data</span> <span class=s2>&#34;aws_caller_identity&#34;</span> <span class=s2>&#34;current&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=kr>
+</span></span></span><span class=line><span class=cl><span class=kr>data</span> <span class=s2>&#34;aws_iam_policy_document&#34;</span> <span class=s2>&#34;data_access_policy&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=p>...</span>
+</span></span><span class=line><span class=cl>  <span class=nx>statement</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=na>actions</span> = <span class=p>[</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:GetDatabase&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:GetDatabases&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:CreateDatabase&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:GetUserDefinedFunctions&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:CreateTable&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:UpdateTable&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:DeleteTable&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:GetTable&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:GetTables&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:GetConnection&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:GetTableVersions&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:CreatePartition&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:BatchCreatePartition&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:UpdatePartition&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:DeletePartition&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:BatchDeletePartition&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:GetPartition&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:GetPartitions&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:BatchGetPartition&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:StartCrawler&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;glue:GetCrawlers&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=na>resources</span> = <span class=p>[</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;arn:aws:glue:us-east-1:</span><span class=si>${</span><span class=nb>data</span><span class=p>.</span><span class=nx>aws_caller_identity</span><span class=p>.</span><span class=nx>current</span><span class=p>.</span><span class=nx>account_id</span><span class=si>}</span><span class=s2>:catalog&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;arn:aws:glue:us-east-1:</span><span class=si>${</span><span class=nb>data</span><span class=p>.</span><span class=nx>aws_caller_identity</span><span class=p>.</span><span class=nx>current</span><span class=p>.</span><span class=nx>account_id</span><span class=si>}</span><span class=s2>:database/default&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;arn:aws:glue:us-east-1:</span><span class=si>${</span><span class=nb>data</span><span class=p>.</span><span class=nx>aws_caller_identity</span><span class=p>.</span><span class=nx>current</span><span class=p>.</span><span class=nx>account_id</span><span class=si>}</span><span class=s2>:database/global_temp&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;arn:aws:glue:us-east-1:</span><span class=si>${</span><span class=nb>data</span><span class=p>.</span><span class=nx>aws_caller_identity</span><span class=p>.</span><span class=nx>current</span><span class=p>.</span><span class=nx>account_id</span><span class=si>}</span><span class=s2>:database/</span><span class=si>${</span><span class=nb>var</span><span class=p>.</span><span class=nx>team_name</span><span class=si>}</span><span class=s2>-*&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;arn:aws:glue:us-east-1:</span><span class=si>${</span><span class=nb>data</span><span class=p>.</span><span class=nx>aws_caller_identity</span><span class=p>.</span><span class=nx>current</span><span class=p>.</span><span class=nx>account_id</span><span class=si>}</span><span class=s2>:table/*&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=p>]</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>之后，我们要对EMR做一些配置，使得Glue可以作为Hive接口暴露出来。既然已经要添加配置了，一些常用的性能优化配置也顺便做了，希望不是过早优化。不管怎样，这种优化都是各种坊间流传的都市传说，万一有用呢，是吧？最重要的其实只是<code>spark-hive-site</code>这一小节。这里我们使用AWS提供的工具类，把Glue包装成了Hive的样子。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Terraform data-lang=Terraform><span class=line><span class=cl><span class=kr>data</span> <span class=s2>&#34;template_file&#34;</span> <span class=s2>&#34;emr_config&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=na>template</span> = <span class=o>&lt;&lt;EOF</span><span class=s>
+</span></span></span><span class=line><span class=cl><span class=s>[
+</span></span></span><span class=line><span class=cl><span class=s>  {
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Classification&#34;:&#34;spark&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Properties&#34;:{
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;maximizeResourceAllocation&#34;: &#34;true&#34;
+</span></span></span><span class=line><span class=cl><span class=s>      }
+</span></span></span><span class=line><span class=cl><span class=s>  },
+</span></span></span><span class=line><span class=cl><span class=s>  {
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Classification&#34;:&#34;spark-defaults&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Properties&#34;:{
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.network.timeout&#34;: &#34;800s&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.executor.heartbeatInterval&#34;: &#34;60s&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.sql.catalogImplementation&#34;: &#34;hive&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.sql.sources.partitionOverwriteMode&#34;: &#34;dynamic&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.dynamicAllocation.enabled&#34;: &#34;true&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.dynamicAllocation.initialExecutors&#34;: &#34;20&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.dynamicAllocation.maxExecutors&#34;: &#34;80&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.dynamicAllocation.executorAllocationRatio&#34;: &#34;1&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.yarn.scheduler.reporterThread.maxFailures&#34;: &#34;5&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.shuffle.compress&#34;: &#34;true&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.shuffle.spill.compress&#34;: &#34;true&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;spark.default.parallelism&#34;: &#34;4000&#34;
+</span></span></span><span class=line><span class=cl><span class=s>      }
+</span></span></span><span class=line><span class=cl><span class=s>  },
+</span></span></span><span class=line><span class=cl><span class=s>  {
+</span></span></span><span class=line><span class=cl><span class=s>    &#34;Classification&#34;: &#34;mapred-site&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>    &#34;Properties&#34;: {
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;mapreduce.map.output.compress&#34;: &#34;true&#34;
+</span></span></span><span class=line><span class=cl><span class=s>    }
+</span></span></span><span class=line><span class=cl><span class=s>  },
+</span></span></span><span class=line><span class=cl><span class=s>  {
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Classification&#34;:&#34;spark-hive-site&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Properties&#34;:{
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;hive.metastore.client.factory.class&#34;:&#34;com.amazonaws.glue.catalog.metastore.AWSGlueDataCatalogHiveClientFactory&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;hive.metastore.connect.retries&#34;: &#34;15&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;hive.blobstore.optimizations.enabled&#34;: &#34;false&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;hive.exec.dynamic.partition&#34;: &#34;true&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;hive.exec.dynamic.partition.mode&#34;: &#34;nonstrict&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;hive.mv.files.thread&#34;: &#34;20&#34;
+</span></span></span><span class=line><span class=cl><span class=s>      }
+</span></span></span><span class=line><span class=cl><span class=s>  },
+</span></span></span><span class=line><span class=cl><span class=s>  {
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Classification&#34;:&#34;yarn-site&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>      &#34;Properties&#34;:{
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;yarn.nodemanager.vmem-check-enabled&#34;:&#34;false&#34;,
+</span></span></span><span class=line><span class=cl><span class=s>        &#34;yarn.nodemanager.pmem-check-enabled&#34;:&#34;false&#34;
+</span></span></span><span class=line><span class=cl><span class=s>      }
+</span></span></span><span class=line><span class=cl><span class=s>  }
+</span></span></span><span class=line><span class=cl><span class=s>]
+</span></span></span><span class=line><span class=cl><span class=s></span><span class=o>EOF</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=kr>
+</span></span></span><span class=line><span class=cl><span class=kr>resource</span> <span class=s2>&#34;aws_emr_cluster&#34;</span> <span class=s2>&#34;etl_cluster&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=p>...</span>
+</span></span><span class=line><span class=cl>  <span class=na>configurations</span>         = <span class=nb>data</span><span class=p>.</span><span class=nx>template_file</span><span class=p>.</span><span class=nx>emr_config</span><span class=p>.</span><span class=nx>rendered</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>好了，我们的EMR现在就可以使用方便的Hive来做S3的读写了。下面是一个读取的例子：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Scala data-lang=Scala><span class=line><span class=cl><span class=k>val</span> <span class=n>dataFrame</span> <span class=k>=</span> <span class=n>spark</span><span class=o>.</span><span class=n>sql</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>  <span class=s>s&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s>    | select * from test_table where date=&#39;2021-01-29&#39; and data_type=456
+</span></span></span><span class=line><span class=cl><span class=s>  &#34;&#34;&#34;</span><span class=o>.</span><span class=n>stripMargin</span>
+</span></span><span class=line><span class=cl><span class=o>)</span>
+</span></span><span class=line><span class=cl><span class=c1>// use dataFrame as normal
+</span></span></span></code></pre></td></tr></table></div></div><p>等一下，我们怎么确定这个是在读S3呢？那个<code>test_table</code>从哪里冒出来的？我们回过头来看看test_table的创建过程。我们当然可以用Glue手动创建表，并且连接到S3。这也是Glue Crawler最常用的做法。但是，如果我们的数据主要都是从Spark任务中生成的，或者ETL任务写入S3，那么一事不烦二主，我们可以直接从Spark任务中创建指向S3的表，并保存在Glue中。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Scala data-lang=Scala><span class=line><span class=cl><span class=k>val</span> <span class=n>tableName</span> <span class=k>=</span> <span class=s>&#34;test_table&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>spark</span><span class=o>.</span><span class=n>sql</span><span class=o>(</span>
+</span></span><span class=line><span class=cl>  <span class=s>s&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s>    | CREATE TABLE IF NOT EXIST </span><span class=si>$tableName</span><span class=s>
+</span></span></span><span class=line><span class=cl><span class=s>    |   (id BIGINT, name VARCHAR(100), data_type INT)
+</span></span></span><span class=line><span class=cl><span class=s>    | PARTITIONED BY (date VARCHAR(15))
+</span></span></span><span class=line><span class=cl><span class=s>    | STORED AS ORC
+</span></span></span><span class=line><span class=cl><span class=s>    | LOCATION &#39;s3://&lt;bucket-name&gt;/hive/</span><span class=si>$tableName</span><span class=s>&#39;
+</span></span></span><span class=line><span class=cl><span class=s>  &#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl><span class=o>)</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样，一个数据库就创建好了，Glue的元数据也同步了。之后对于这张表的使用，Glue这一层几乎就是透明的了。</p><h2 id=通过step操作远程向emr提交任务>通过Step操作远程向EMR提交任务</h2><p>对于一个成熟的系统，我们自然希望能够尽可能的减少人工操作，尤其是一些重复性的任务。最典型的重复性任务，就是向EMR集群提交任务了。如果你创建EMR集群只是为了一个任务，那么当我没说。不过，大多数情况下，一个公司或者一个组创建了一个EMR集群，自然是希望能够尽可能高效的使用它，而不是每次提交一个任务，都要等20分钟来创建EMR集群。</p><p>这里，我们主要要考虑的是，SSH登录到EMR再提交任务这种做法，一是麻烦，二是不安全。所以，我们将目光投向AWS引入的更抽象的概念：步骤(Step)。EMR的一个步骤就是提交上去的一个任务，可以是Spark任务，也可以是EMR支持的各种软件的任务。这里我们只关注Spark任务。</p><p>用代码来提交一个任务也很简单，首先我们的Jar包应该被保存在S3桶里，并且这个S3桶要能够被EMR集群访问到。我们之前创建的数据桶就是个好选择。刚好我们可以把所有关于数据湖的东西都放在一起。然后，我们就需要访问AWS EMR本身的HTTP API了。代码如下（Kotlin版本）：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Kotlin data-lang=Kotlin><span class=line><span class=cl><span class=k>val</span> <span class=py>emr</span> <span class=p>=</span> <span class=nc>AmazonElasticMapReduceClientBuilder</span><span class=p>.</span><span class=n>standard</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>                <span class=p>.</span><span class=n>withRegion</span><span class=p>(</span><span class=nc>Regions</span><span class=p>.</span><span class=n>US_EAST_1</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                <span class=p>.</span><span class=n>build</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=k>val</span> <span class=py>clusterName</span> <span class=p>=</span> <span class=s2>&#34;ETL-emr-cluster&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>fun</span> <span class=nf>getClusterId</span><span class=p>():</span> <span class=n>String</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>listClusterRequest</span> <span class=p>=</span> <span class=n>ListClustersRequest</span><span class=p>().</span><span class=n>withClusterStates</span><span class=p>(</span><span class=s2>&#34;RUNNING&#34;</span><span class=p>,</span> <span class=s2>&#34;WAITING&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>response</span> <span class=p>=</span> <span class=n>emr</span><span class=p>.</span><span class=n>listClusters</span><span class=p>(</span><span class=n>listClusterRequest</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>cluster</span> <span class=p>=</span> <span class=n>response</span><span class=p>.</span><span class=n>clusters</span><span class=p>.</span><span class=n>first</span> <span class=p>{</span> <span class=k>it</span><span class=p>.</span><span class=n>name</span> <span class=o>==</span> <span class=n>emrClusterName</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span> <span class=n>cluster</span><span class=p>.</span><span class=n>id</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>fun</span> <span class=nf>runJob</span><span class=p>(</span><span class=n>jobName</span><span class=p>:</span> <span class=n>String</span><span class=p>,</span> <span class=n>jarPathOnS3</span><span class=p>:</span> <span class=n>String</span><span class=p>,</span> <span class=n>className</span><span class=p>:</span> <span class=n>String</span><span class=p>,</span> <span class=n>additionalArgs</span><span class=p>:</span> <span class=n>List</span><span class=p>&lt;</span><span class=n>String</span><span class=p>&gt;):</span> <span class=n>String</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>args</span> <span class=p>=</span> <span class=n>arrayOf</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>          <span class=s2>&#34;spark-submit&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>          <span class=s2>&#34;--class&#34;</span><span class=p>,</span> <span class=n>className</span>
+</span></span><span class=line><span class=cl>      <span class=p>)</span> <span class=p>+</span> <span class=n>additionalArgs</span> <span class=p>+</span> <span class=n>arrayOf</span><span class=p>(</span><span class=n>jarPathOnS3</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>step</span> <span class=p>=</span> <span class=n>HadoopJarStepConfig</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>      <span class=p>.</span><span class=n>withJar</span><span class=p>(</span><span class=s2>&#34;command-runner.jar&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>      <span class=p>.</span><span class=n>withArgs</span><span class=p>(*</span><span class=n>args</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>stepConfig</span> <span class=p>=</span> <span class=n>StepConfig</span><span class=p>(</span><span class=n>jobName</span><span class=p>,</span> <span class=n>step</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>      <span class=p>.</span><span class=n>withActionOnFailure</span><span class=p>(</span><span class=nc>ActionOnFailure</span><span class=p>.</span><span class=n>CONTINUE</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>result</span> <span class=p>=</span> <span class=n>emr</span><span class=p>.</span><span class=n>addJobFlowSteps</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>                <span class=n>AddJobFlowStepsRequest</span><span class=p>(</span><span class=n>getClusterId</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>                        <span class=p>.</span><span class=n>withSteps</span><span class=p>(</span><span class=n>stepConfig</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=p>)</span>
+</span></span><span class=line><span class=cl>  <span class=k>return</span> <span class=n>result</span><span class=p>.</span><span class=n>stepIds</span><span class=p>.</span><span class=n>first</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>fun</span> <span class=nf>waitForStepFinish</span><span class=p>(</span><span class=n>stepId</span><span class=p>:</span> <span class=n>String</span><span class=p>)</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=k>val</span> <span class=py>describeStepRequest</span> <span class=p>=</span> <span class=n>DescribeStepRequest</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>                <span class=p>.</span><span class=n>withStepId</span><span class=p>(</span><span class=n>stepId</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                <span class=p>.</span><span class=n>withClusterId</span><span class=p>(</span><span class=n>getClusterId</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>        <span class=n>emr</span><span class=p>.</span><span class=n>waiters</span><span class=p>().</span><span class=n>stepComplete</span><span class=p>().</span><span class=n>run</span><span class=p>(</span><span class=n>WaiterParameters</span><span class=p>(</span><span class=n>describeStepRequest</span><span class=p>))</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这里，为了避免我们的EMR集群由于各种原因挂掉又重建，我们每次都通过固定的集群名称来获得API所需要的集群ID。提交步骤是异步的，我们会得到一个步骤ID，这里我们也展示了通过步骤ID来等待步骤完成的函数。</p><p>那么，要运行这些函数，我们需要哪些权限呢？其实理论上来说我们只要<code>elasticmapreduce:AddJobFlowSteps</code>权限就好了。但是作为一个完整的任务系统，我们不可避免地要添加上步骤监控，步骤管理，甚至集群管理之类的功能，所以作为和EMR集群交互的任务服务，我们最好能添加如下权限：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-Terraform data-lang=Terraform><span class=line><span class=cl><span class=kr>data</span> <span class=s2>&#34;aws_iam_policy_document&#34;</span> <span class=s2>&#34;step_manager_policy&#34;</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>  <span class=nx>statement</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=na>actions</span> = <span class=p>[</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;elasticmapreduce:AddJobFlowSteps&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;elasticmapreduce:CancelSteps&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;elasticmapreduce:DescribeCluster&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;elasticmapreduce:DescribeStep&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;elasticmapreduce:ListSteps&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;elasticmapreduce:ListSteps&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;elasticmapreduce:ListInstanceGroups&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;elasticmapreduce:ModifyInstanceGroups&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;elasticmapreduce:ModifyCluster&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=na>resources</span> = <span class=p>[</span><span class=s2>&#34;*&#34;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=nx>condition</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>      <span class=na>test</span> = <span class=s2>&#34;StringEquals&#34;</span>
+</span></span><span class=line><span class=cl><span class=kr>      variable</span> <span class=o>=</span> <span class=s2>&#34;elasticmapreduce:ResourceTag/useTag&#34;</span>
+</span></span><span class=line><span class=cl>      <span class=na>values</span> = <span class=p>[</span><span class=s2>&#34;etl&#34;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl>  <span class=nx>statement</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=na>actions</span> = <span class=p>[</span>
+</span></span><span class=line><span class=cl>      <span class=s2>&#34;elasticmapreduce:ListClusters&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=na>resources</span> = <span class=p>[</span><span class=s2>&#34;*&#34;</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>  <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div></div><footer class=post-footer><nav class=post-nav><a class=prev href=/post/2022-09-07/><i class="iconfont icon-left"></i>
+<span class="prev-text nav-default">学习Godot（一）</span>
+<span class="prev-text nav-mobile">上一篇</span></a>
+<a class=next href=/post/2021-01-28/><span class="next-text nav-default">AWS MSK的安全性设置</span>
+<span class="next-text nav-mobile">下一篇</span>
+<i class="iconfont icon-right"></i></a></nav></footer></article></div></div></main><footer id=footer class=footer><div class=social-links><a href=cerrorism@gmail.com class="iconfont icon-email" title=email></a>
+<a href=https://linkedin.com/in/zhengguang-chen-a4a4b430 class="iconfont icon-linkedin" title=linkedin></a>
+<a href=https://github.com/cerrorism class="iconfont icon-github" title=github></a>
+<a href=https://www.zhihu.com/people/chen-zheng-guang class="iconfont icon-zhihu" title=zhihu></a>
+<a href=https://space.bilibili.com/1614504 class="iconfont icon-bilibili" title=bilibili></a>
+<a href=https://blog.cerrorism.com/index.xml type=application/rss+xml class="iconfont icon-rss" title=rss></a></div><div class=copyright><span class=power-by>由 <a class=hexo-link href=https://gohugo.io>Hugo</a> 强力驱动</span>
+<span class=division>|</span>
+<span class=theme-info>主题 -
+<a class=theme-link href=https://github.com/olOwOlo/hugo-theme-even>Even</a></span>
+<span class=copyright-year>&copy;
+2020 -
+2022<span class=heart><i class="iconfont icon-heart"></i></span><span>Zhengguang Chen</span></span></div></footer><div class=back-to-top id=back-to-top><i class="iconfont icon-up"></i></div></div><script src=https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin=anonymous></script>
+<script src=https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin=anonymous></script>
+<script src=https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin=anonymous></script>
+<script type=text/javascript src=/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js></script>
+<script src=/js/mermaid.min.js></script></body></html>

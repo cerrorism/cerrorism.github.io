@@ -1,0 +1,70 @@
+<!doctype html><html lang=zh-cn><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge,chrome=1"><title>学习Godot（一） - 心之所向</title><meta name=renderer content="webkit"><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1"><meta http-equiv=cache-control content="no-transform"><meta http-equiv=cache-control content="no-siteapp"><meta name=theme-color content="#f8f5ec"><meta name=msapplication-navbutton-color content="#f8f5ec"><meta name=apple-mobile-web-app-capable content="yes"><meta name=apple-mobile-web-app-status-bar-style content="#f8f5ec"><meta name=author content="Zhengguang Chen"><meta name=description content="最近在Steam上玩游戏之余，看到有Godot这样一款游戏引擎可以下载，于是突然心血来 潮，想要学习一下做游戏。那么在这个视频里，我想记录一下自己学习的历程，一方面是 迫使自己有始有终的学习下来，另一方面也可以分享给有需要的朋友。
+"><meta name=keywords content="Godot,游戏开发"><meta name=generator content="Hugo 0.107.0 with theme even"><link rel=canonical href=https://blog.cerrorism.com/post/2022-09-07/><link rel=apple-touch-icon sizes=180x180 href=/apple-touch-icon.png><link rel=icon type=image/png sizes=32x32 href=/favicon-32x32.png><link rel=icon type=image/png sizes=16x16 href=/favicon-16x16.png><link rel=manifest href=/manifest.json><link rel=mask-icon href=/safari-pinned-tab.svg color=#5bbad5><link href=/sass/main.min.f92fd13721ddf72129410fd8250e73152cc6f2438082b6c0208dc24ee7c13fc4.css rel=stylesheet><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin=anonymous><meta property="og:title" content="学习Godot（一）"><meta property="og:description" content="最近在Steam上玩游戏之余，看到有Godot这样一款游戏引擎可以下载，于是突然心血来
+潮，想要学习一下做游戏。那么在这个视频里，我想记录一下自己学习的历程，一方面是
+迫使自己有始有终的学习下来，另一方面也可以分享给有需要的朋友。"><meta property="og:type" content="article"><meta property="og:url" content="https://blog.cerrorism.com/post/2022-09-07/"><meta property="article:section" content="post"><meta property="article:published_time" content="2022-09-07T17:13:00-07:00"><meta property="article:modified_time" content="2022-09-07T17:13:00-07:00"><meta itemprop=name content="学习Godot（一）"><meta itemprop=description content="最近在Steam上玩游戏之余，看到有Godot这样一款游戏引擎可以下载，于是突然心血来
+潮，想要学习一下做游戏。那么在这个视频里，我想记录一下自己学习的历程，一方面是
+迫使自己有始有终的学习下来，另一方面也可以分享给有需要的朋友。"><meta itemprop=datePublished content="2022-09-07T17:13:00-07:00"><meta itemprop=dateModified content="2022-09-07T17:13:00-07:00"><meta itemprop=wordCount content="1786"><meta itemprop=keywords content="Godot,"><meta name=twitter:card content="summary"><meta name=twitter:title content="学习Godot（一）"><meta name=twitter:description content="最近在Steam上玩游戏之余，看到有Godot这样一款游戏引擎可以下载，于是突然心血来
+潮，想要学习一下做游戏。那么在这个视频里，我想记录一下自己学习的历程，一方面是
+迫使自己有始有终的学习下来，另一方面也可以分享给有需要的朋友。"><!--[if lte IE 9]><script src=https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js></script><![endif]--><!--[if lt IE 9]><script src=https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js></script>
+<script src=https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js></script><![endif]--></head><body><div id=mobile-navbar class=mobile-navbar><div class=mobile-header-logo><a href=/ class=logo>心之所向</a></div><div class=mobile-navbar-icon><span></span>
+<span></span>
+<span></span></div></div><nav id=mobile-menu class="mobile-menu slideout-menu"><ul class=mobile-menu-list><a href=/><li class=mobile-menu-item>主页</li></a><a href=/post/><li class=mobile-menu-item>博客</li></a><a href=/about/><li class=mobile-menu-item>关于</li></a></ul></nav><div class=container id=mobile-panel><header id=header class=header><div class=logo-wrapper><a href=/ class=logo>心之所向</a></div><nav class=site-navbar><ul id=menu class=menu><li class=menu-item><a class=menu-item-link href=/>主页</a></li><li class=menu-item><a class=menu-item-link href=/post/>博客</a></li><li class=menu-item><a class=menu-item-link href=/about/>关于</a></li></ul></nav></header><main id=main class=main><div class=content-wrapper><div id=content class=content><article class=post><header class=post-header><h1 class=post-title>学习Godot（一）</h1><div class=post-meta><span class=post-time>2022-09-07</span><div class=post-category><a href=/categories/godot/>Godot</a></div></div></header><div class=post-toc id=post-toc><h2 class=post-toc-title>文章目录</h2><div class="post-toc-content always-active"><nav id=TableOfContents><ul><li><ul><li><a href=#个人背景>个人背景</a></li><li><a href=#为什么选择godot>为什么选择Godot</a></li><li><a href=#godot的版本选择>Godot的版本选择</a></li><li><a href=#godot的安装>Godot的安装</a></li><li><a href=#语言的选择>语言的选择</a></li><li><a href=#学习顺序>学习顺序</a></li></ul></li></ul></nav></div></div><div class=post-content><p>最近在Steam上玩游戏之余，看到有Godot这样一款游戏引擎可以下载，于是突然心血来
+潮，想要学习一下做游戏。那么在这个视频里，我想记录一下自己学习的历程，一方面是
+迫使自己有始有终的学习下来，另一方面也可以分享给有需要的朋友。</p><h2 id=个人背景>个人背景</h2><p>首先我想介绍一下我的知识背景，如果有相似背景的朋友，可能会对这个视频有更多的共
+鸣。如果是背景完全不同，比如美术大佬，或者有丰富的游戏开发经验，那这个视频里的
+东西可能就没那么有趣。我是在职程序员，有后端开发经验，主要写Java程序。之前从来
+没有做过游戏开发，美术水品止步于火柴人，审美水平局限于简单的好看不好看，全凭
+直觉。学习做游戏完全是心血来潮，没有理由，也不是迫于生活压力。</p><h2 id=为什么选择godot>为什么选择Godot</h2><p>接下来是游戏引擎的选择，这个是业余开发者的权利。如果是在公司做游戏，那么选哪个引擎往
+往不是我说了算的。但自己闲暇时候开发，游戏引擎还是可以挑挑拣拣一下的。现在最
+流行的游戏引擎就是两款，Unreal和Unity。我也跟着新手教程写了一两个
+HelloWorld体验了一下，只能说市面上任意一款游戏引擎所提供的功能都远远的超出
+了我目前能力的上限，自己的水平之低根本轮不到拼工具，所以其实选哪个都无所
+谓。Unreal的资源都很漂亮，但是这个游戏引擎太大了，安装了一下大概70G左右，
+打开又很慢。我作为一个脾气急躁的程序员，这个真是遭不住。Unity中等大小，据说
+是最适合个人开发者的游戏引擎。奈何我这半年买Unity的股票，血亏了不少钱，算是
+有了私人恩怨。Godot没有私人恩怨，更巧的是可以在Steam上下载，完美符合我大部
+分时间玩游戏，偶尔装作做游戏的行为模式。所以就他了。</p><h2 id=godot的版本选择>Godot的版本选择</h2><p>接下来呢，就是选择Godot的版本了。现在这个时间点其实挺尴尬的，虽然Godot 3.5
+也才刚出来，但是再过几个月Godot 4.0就发布了，这是个大升级，GDScript也
+变成了2.0版本，引入了少量的语法糖。想要提前享受4.0带来的一堆新功能，
+可以去下载Alpha版本。但是都Alpha了，还不如直接从Master分支编译，没有中间
+商赚差价。最后呢，考虑到我是初学，我和引擎起码有一个需要是稳定的，所以起码在
+今年年底之前，我的最佳伴侣还是Godot 3.5.</p><h2 id=godot的安装>Godot的安装</h2><p>要使用Godot，第一步当然就是下载了。从官网下载最简单。Godot很小，就是一个孤
+零零的可执行文件，也不用安装，双击运行就可以了。当然也可以从源代码直接编译，
+虽然配置略麻烦，还要安装编译环境，但是也算是程序员的浪漫。之后如果要安装各
+种模块，那么从源代码编译是逃不掉的。最后呢，也可以从Steam上下载。因为我每
+天都在用Steam，所以闲着也是闲着，能用Steam管理我的游戏开发环境，也是很方
+便的事情。</p><h2 id=语言的选择>语言的选择</h2><p>下载完Godot之后，就可以开始写游戏了。接下来就是决定用哪种语言来写。Godot
+官方支持GDScript和C#两种语言。当然还有别的选择，但是新手都不推荐。
+那么C#和GDScript要选哪个呢？C#这个语言其实很不错，在我最喜欢的语言里，
+仅次于Kotlin。C#本身的最新版本是10.0，有很多语法糖可以用。奈何Godot受限
+于自身Mono的版本，只支持C# 7.3。其实C# 7.3也挺好的，可是用不了最新的
+版本，这个很憋屈。比如我从MSDN上看的各种文档，无时无刻不在剧透C# 10有多
+么好用，真是不能忍。GDScript是Godot这个引擎的亲儿子，神似Python。其实
+这个语言没有长在我的审美点上。动态类型，程序稍微一大，代码维护就变得恶
+心起来了。不过我暗自估计了一下，我业余时间做游戏玩玩的话，代码量应该达不到
+维护不了的程度。所以咬咬牙，含泪选择了GDScript来入门。</p><h2 id=学习顺序>学习顺序</h2><p>接下来就是学习顺序了。我想做一个真正能玩的游戏来练手，而不是跟着游戏引擎
+的教程走。因为游戏引擎的教程往往侧重于展示引擎本身的能力，最终是一堆功
+能的堆砌，写出来的东西不怎么好玩。我还是更倾向于做一个简单但是完整的游
+戏，比如俄罗斯方块。那么写一个俄罗斯方块需要几步呢？三步。第一步是写基础
+逻辑。在这个过程中我也可以学习GDScript这个语言本身。第二步是加入一个简
+单的画面，能够玩起来，顺便学习游戏引擎的基础。第三步就是加入亿点点细节，
+学习游戏引擎的各种酷炫功能。</p><p>那么废话不多说，我们开搞。</p></div><div class=post-copyright><p class=copyright-item><span class=item-title>文章作者</span>
+<span class=item-content>Zhengguang Chen</span></p><p class=copyright-item><span class=item-title>上次更新</span>
+<span class=item-content>2022-09-07</span></p></div><footer class=post-footer><div class=post-tags><a href=/tags/godot/>Godot</a></div><nav class=post-nav><a class=next href=/post/2021-01-29/><span class="next-text nav-default">在AWS上使用EMR创建一个简单的数据湖（3）</span>
+<span class="next-text nav-mobile">下一篇</span>
+<i class="iconfont icon-right"></i></a></nav></footer></article></div></div></main><footer id=footer class=footer><div class=social-links><a href=cerrorism@gmail.com class="iconfont icon-email" title=email></a>
+<a href=https://linkedin.com/in/zhengguang-chen-a4a4b430 class="iconfont icon-linkedin" title=linkedin></a>
+<a href=https://github.com/cerrorism class="iconfont icon-github" title=github></a>
+<a href=https://www.zhihu.com/people/chen-zheng-guang class="iconfont icon-zhihu" title=zhihu></a>
+<a href=https://space.bilibili.com/1614504 class="iconfont icon-bilibili" title=bilibili></a>
+<a href=https://blog.cerrorism.com/index.xml type=application/rss+xml class="iconfont icon-rss" title=rss></a></div><div class=copyright><span class=power-by>由 <a class=hexo-link href=https://gohugo.io>Hugo</a> 强力驱动</span>
+<span class=division>|</span>
+<span class=theme-info>主题 -
+<a class=theme-link href=https://github.com/olOwOlo/hugo-theme-even>Even</a></span>
+<span class=copyright-year>&copy;
+2020 -
+2022<span class=heart><i class="iconfont icon-heart"></i></span><span>Zhengguang Chen</span></span></div></footer><div class=back-to-top id=back-to-top><i class="iconfont icon-up"></i></div></div><script src=https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin=anonymous></script>
+<script src=https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin=anonymous></script>
+<script src=https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin=anonymous></script>
+<script type=text/javascript src=/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js></script>
+<script src=/js/mermaid.min.js></script></body></html>

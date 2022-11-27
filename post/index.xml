@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Posts on 心之所向</title><link>https://blog.cerrorism.com/post/</link><description>Recent content in Posts on 心之所向</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Wed, 07 Sep 2022 17:13:00 -0700</lastBuildDate><atom:link href="https://blog.cerrorism.com/post/index.xml" rel="self" type="application/rss+xml"/><item><title>学习Godot（一）</title><link>https://blog.cerrorism.com/post/2022-09-07/</link><pubDate>Wed, 07 Sep 2022 17:13:00 -0700</pubDate><guid>https://blog.cerrorism.com/post/2022-09-07/</guid><description>&lt;p>最近在Steam上玩游戏之余，看到有Godot这样一款游戏引擎可以下载，于是突然心血来
+潮，想要学习一下做游戏。那么在这个视频里，我想记录一下自己学习的历程，一方面是
+迫使自己有始有终的学习下来，另一方面也可以分享给有需要的朋友。&lt;/p></description></item><item><title>在AWS上使用EMR创建一个简单的数据湖（3）</title><link>https://blog.cerrorism.com/post/2021-01-29/</link><pubDate>Fri, 29 Jan 2021 10:44:40 -0800</pubDate><guid>https://blog.cerrorism.com/post/2021-01-29/</guid><description>好的，当我们辛辛苦苦创建了EMR集群之后，有两个问题我们需要解决。第一，我们现在的EMR还没有权限访问S3，也就是说只能自娱自乐，搞些Wor</description></item><item><title>AWS MSK的安全性设置</title><link>https://blog.cerrorism.com/post/2021-01-28/</link><pubDate>Thu, 28 Jan 2021 14:12:35 -0800</pubDate><guid>https://blog.cerrorism.com/post/2021-01-28/</guid><description>如今设计大型软件系统的时候，异步和消息队列已经成了一种时尚。不管数据量大还是小，服务设计成异步总会看起来高大上一些。不要问，问就是设计容量一</description></item><item><title>在AWS上使用EMR创建一个简单的数据湖（2）</title><link>https://blog.cerrorism.com/post/2021-01-26/</link><pubDate>Tue, 26 Jan 2021 10:46:27 -0800</pubDate><guid>https://blog.cerrorism.com/post/2021-01-26/</guid><description>&lt;p>接下来，我们就可以动手创建AWS上的各种资源了。Terraform走起~&lt;/p>
+&lt;h2 id="创建s3存储">创建S3存储&lt;/h2>
+&lt;p>创建S3的代码很简单，只需要注意这么几点：&lt;/p>
+&lt;ul>
+&lt;li>S3需要一个唯一的名字。不光是在自己的AWS账号上唯一哦，因为S3的名字是所谓Global Name，需要全球唯一 =_=!&lt;/li>
+&lt;li>偶尔还是要有一些安全意识的，比如ACL最好设成private&lt;/li>
+&lt;li>存储的数据量大了，我们就要考虑成本问题了。S3大致上有三级存储，Standard/Standard_IA/Glacier，性能和价格双双依次降低。在绝大多数情况下，我们只会频繁使用近期的数据。这样，我们可以把古老的数据挪到更便宜的存储上。虽然S3已经很便宜了，但是羊毛还是能薅就薅。&lt;/li>
+&lt;/ul>
+&lt;p>Terraform代码如下：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-Terraform" data-lang="Terraform">&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_s3_bucket&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;data&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">bucket&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">company_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">team_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-data-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">environment&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">acl&lt;/span> = &lt;span class="s2">&amp;#34;private&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">tags&lt;/span> = &lt;span class="nx">local&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">common&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">tags&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">lifecycle_rule&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">id&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">company_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">team_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-data-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">environment&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-rule&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">enabled&lt;/span> = &lt;span class="kc">true&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">transition&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">days&lt;/span> = &lt;span class="m">60&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">storage_class&lt;/span> = &lt;span class="s2">&amp;#34;STANDARD_IA&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">transition&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">days&lt;/span> = &lt;span class="m">365&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">storage_class&lt;/span> = &lt;span class="s2">&amp;#34;GLACIER&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>我们还可以加点别的功能（所谓“来都来了”），比如当我们给S3中写入了新的数据的时候，我们想得到一个通知。之后利用这个通知，我们就可以驱动很多事情，比如EMR上面的处理任务，或者发邮件通知同事们数据已经准备好了。这个也不难，首先创建一个SNS消息队列，然后把安全性配置好就行了。走起~&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-Terraform" data-lang="Terraform">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 创建SNS消息队列
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_sns_topic&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;sns_s3_data_notification_queue&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">name&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">team_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-sns-s3-notification-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">environment&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">tags&lt;/span> = &lt;span class="nx">local&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">common&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">tags&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 设置SNS，允许S3发送消息
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kr">data&lt;/span> &lt;span class="s2">&amp;#34;aws_iam_policy_document&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;sns_policy_doc&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">statement&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">actions&lt;/span> = &lt;span class="p">[&lt;/span>&lt;span class="s2">&amp;#34;SNS:Publish&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">effect&lt;/span> = &lt;span class="s2">&amp;#34;Allow&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">principals&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">type&lt;/span> = &lt;span class="s2">&amp;#34;AWS&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">identifiers&lt;/span> = &lt;span class="p">[&lt;/span>&lt;span class="s2">&amp;#34;*&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">resources&lt;/span> = &lt;span class="p">[&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nx">aws_sns_topic&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">sns_s3_data_notification_queue&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">arn&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">condition&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">test&lt;/span> = &lt;span class="s2">&amp;#34;ArnLike&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr"> variable&lt;/span> &lt;span class="o">=&lt;/span> &lt;span class="s2">&amp;#34;aws:SourceArn&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">values&lt;/span> = &lt;span class="p">[&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nx">aws_s3_bucket&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nb">data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">arn&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_sns_topic_policy&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;default&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">arn&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nx">aws_sns_topic&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">SNS_s3_notification&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">arn&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">policy&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">aws_iam_policy_document&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">SNS_policy_doc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">json&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 设置S3，发送ObjectCreated消息
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">&lt;/span>&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_s3_bucket_notification&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;data-bucket-notification&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">bucket&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nx">aws_s3_bucket&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">general_data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">id&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">topic&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">topic_arn&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nx">aws_sns_topic&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">SNS_s3_notification&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">arn&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">events&lt;/span> = &lt;span class="p">[&lt;/span>&lt;span class="s2">&amp;#34;s3:ObjectCreated:*&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>很好，从数据存储角度来说，这个S3基本够用了。&lt;/p>
+&lt;h2 id="创建emr集群">创建EMR集群&lt;/h2>
+&lt;p>在我们的计划中，所有的ETL任务都是在同一个EMR集群上运行的。创建EMR还是比较麻烦的，主要是安全性的配置非常多。这也就是为什么有很多公司提供一键部署EMR集群的服务，虽然只是在AWS上包装了一层，但还能向用户再次收费的原因，毕竟省了很多事儿啊。不过我们一步一步来，先从创建一个简单的EMR集群开始。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-Terraform" data-lang="Terraform">&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_emr_cluster&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;etl_cluster&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">name&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">team_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-etl-cluster-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">environment&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">tags&lt;/span> =&lt;span class="nb"> merge&lt;/span>&lt;span class="p">(&lt;/span> &lt;span class="nx">local&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">common&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">tags&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">useTag&lt;/span> = &lt;span class="s2">&amp;#34;etl&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">release_label&lt;/span> = &lt;span class="s2">&amp;#34;emr-5.30.0&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">applications&lt;/span> = &lt;span class="p">[&lt;/span>&lt;span class="s2">&amp;#34;Spark&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">master_instance_group&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">instance_type&lt;/span> = &lt;span class="s2">&amp;#34;m5.xlarge&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">core_instance_group&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">instance_type&lt;/span> = &lt;span class="s2">&amp;#34;m5.xlarge&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">instance_count&lt;/span> = &lt;span class="m">5&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">name&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">team_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-etl-cluster-core-instance-group-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">environment&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>是的，就是这么简单。我们只装了一个软件，就是Spark，用来做计算。根据不同的需求，我们还可以安装Hadoop来做传统的MapReduce计算，或者Livy来做更好的Spark任务管理。具体需要装什么软件，各位看官可能比我还要熟悉，这里就不提了。我们在这个系列文章里只以Spark来举例。&lt;/p>
+&lt;p>运行一下这个Terraform脚本，各种关于安全性的狗屁倒灶的事情就接踵而来。首先，EMR可以理解为AWS帮我们管理一堆EC2机器。但是，EMR本身需要一定的权限来对机器进行添加、删除、监控、更改权限等等操作。这个叫做EMR服务角色（Service Role）。我们需要把这个角色创建出来，并且告诉我们的集群，使用这个角色来管理我们的集群机器。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-Terraform" data-lang="Terraform">&lt;span class="line">&lt;span class="cl">&lt;span class="kr">data&lt;/span> &lt;span class="s2">&amp;#34;aws_iam_policy_document&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;emr_service_assume_role&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">statement&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">principals&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">type&lt;/span> = &lt;span class="s2">&amp;#34;Service&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">identifiers&lt;/span> = &lt;span class="p">[&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;elasticmapreduce.amazonaws.com&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s2">&amp;#34;application-autoscaling.amazonaws.com&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">actions&lt;/span> = &lt;span class="p">[&lt;/span>&lt;span class="s2">&amp;#34;sts:AssumeRole&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_iam_role&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;emr_service_role&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">name&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">team_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-emr-service-role-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">environment&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">assume_role_policy&lt;/span> = &lt;span class="nb">data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">aws_iam_policy_document&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">emr_service_assume_role&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">json&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">tags&lt;/span> = &lt;span class="nx">local&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">common&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">tags&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">path&lt;/span> = &lt;span class="s2">&amp;#34;/&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">team_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">/&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_iam_role_policy_attachment&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;emr_service_role_policy_attachment&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">role&lt;/span> = &lt;span class="nx">aws_iam_role&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">emr_service_role&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">policy_arn&lt;/span> = &lt;span class="s2">&amp;#34;arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceRole&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>上面的这种代码如此常用，已经可以提取出来作为创建IAM角色的标准模板了，也就是先创建一个空白的角色，用AssumeRole策略告诉AWS谁可以代入这个角色。最后再把这个角色所具有的策略添加上去。这里，我们没有手动创建角色所具有的策略，而是使用了AWS自动创建的AmazonElasticMapReduceRole策略。有兴趣的人，或者公司的安全管理人员可以去看看这个策略里包含了哪些权限，保准你会感到心惊胆战，基本上能赋予的权限都包圆了。我们可不可以自己设定一个稍微弱一点的权限呢，能提升一点安全性就提升一点。答案是……不能。经过多次尝试，并且和AWS Tech Support各种亲切交流，我最终确认了，这个策略还是不要动为好。不过可以聊以自慰的是，这个角色只会被AWS自己使用，只能用人不疑了。&lt;/p>
+&lt;p>这样，我们就可以告诉EMR使用我们刚刚创建的IAM角色了。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-Terraform" data-lang="Terraform">&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_emr_cluster&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;etl_cluster&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">service_role&lt;/span> = &lt;span class="nx">aws_iam_role&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">emr_service_role&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">arn&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>接下来，我们要配置我们的EMR集群，使得当任务较多的时候，我们的集群可以自动添加更多的机器，而当任务较少的时候，集群里的机器也会自动变少。这个过程最好越快越好，这样我们在拥有足够多的机器来完成任务的同时，也能充分省钱。小门小户的，要精打细算。这里，我们需要创建一个支持自动伸缩（Auto Scaling）的角色来供EMR使用。是的，我们要创建新的角色而不能重用之前的服务角色，因为赋予的权限是不同的。所幸我们不需要自己去研究哪些权限是必要的，因为AWS再一次自动帮我们创建了包含必要权限的策略。之后，我们需要创建一个EMR集群的自动伸缩策略，告诉AWS我们最少需要保持多少机器，最多允许多少机器（否则一个不小心，分分钟破产的节奏）。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-Terraform" data-lang="Terraform">&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_iam_role&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;emr_autoscaling_role&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">name&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">team_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-emr-autoscaling-role-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">environment&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">assume_role_policy&lt;/span> = &lt;span class="nb">data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">aws_iam_policy_document&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">emr_service_assume_role&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">json&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">tags&lt;/span> = &lt;span class="nx">local&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">common&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">tags&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">path&lt;/span> = &lt;span class="s2">&amp;#34;/&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">team_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">/&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_iam_role_policy_attachment&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;emr_autoscaling_role_policy_attachment&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">role&lt;/span> = &lt;span class="nx">aws_iam_role&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">emr_autoscaling_role&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">name&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">policy_arn&lt;/span> = &lt;span class="s2">&amp;#34;arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforAutoScalingRole&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_emr_cluster&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;etl_cluster&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">autoscaling_role&lt;/span> = &lt;span class="nx">aws_iam_role&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">emr_autoscaling_role&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">arn&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_emr_managed_scaling_policy&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;emr_scaling_policy&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">cluster_id&lt;/span> = &lt;span class="nx">aws_emr_cluster&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">etl_cluster&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">id&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">compute_limits&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">unit_type&lt;/span> = &lt;span class="s2">&amp;#34;Instances&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">minimum_capacity_units&lt;/span> = &lt;span class="m">5&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">maximum_capacity_units&lt;/span> = &lt;span class="m">200&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">maximum_ondemand_capacity_units&lt;/span> = &lt;span class="m">40&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">maximum_core_capacity_units&lt;/span> = &lt;span class="m">10&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>最后，我们的EMR集群需要一个地方来存储日志。EMR可以在本机存日志，但是我们真的不想每次都冲上集群的机器上去看日志，而是想在网页界面上直接看到任务的运行状况，并且当EMR集群由于某种原因挂掉的时候（这是日志文件这辈子最重要的时刻），我们还是可以看到日志，并得知集群最后的遗言。总之，我们希望EMR集群的日志保存在一个EMR之外的地方。是的，你猜对了，S3走起。我们另外创建一个S3存储日志，并配置我们的EMR集群持续写入。由于S3只能写入一个一个完整的对象，而不能持续给对象尾部添加内容，为了避免产生大量的小对象，EMR内部会有缓存机制，默认每5分钟才会写入一次S3。这会导致S3里的日志有时会滞后一些。不过为了能方便的看到日志，我们只能捏着鼻子忍了。最后，日志终究只是日志而已，为了节省空间，三十天后我们就可以自动删除日志了，这个在S3上配置也很方便。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-Terraform" data-lang="Terraform">&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_s3_bucket&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;emr_log&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">bucket&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">company_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">team_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-emr-log-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">environment&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">acl&lt;/span> = &lt;span class="s2">&amp;#34;private&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">tags&lt;/span> = &lt;span class="nx">local&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">common&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">tags&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">lifecycle_rule&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">id&lt;/span> = &lt;span class="s2">&amp;#34;&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">company_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">team_name&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-emr-log-&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nb">var&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">environment&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">-rule&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">enabled&lt;/span> = &lt;span class="kc">true&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nx">expiration&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">days&lt;/span> = &lt;span class="m">30&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kr">resource&lt;/span> &lt;span class="s2">&amp;#34;aws_emr_cluster&amp;#34;&lt;/span> &lt;span class="s2">&amp;#34;etl_cluster&amp;#34;&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">log_uri&lt;/span> = &lt;span class="s2">&amp;#34;s3n://&lt;/span>&lt;span class="si">${&lt;/span>&lt;span class="nx">aws_s3_bucket&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">emr_log&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="nx">id&lt;/span>&lt;span class="si">}&lt;/span>&lt;span class="s2">/&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div></description></item><item><title>在AWS上使用EMR创建一个简单的数据湖（1）</title><link>https://blog.cerrorism.com/post/2021-01-24/</link><pubDate>Sun, 24 Jan 2021 08:47:51 -0800</pubDate><guid>https://blog.cerrorism.com/post/2021-01-24/</guid><description>数据湖（Data Lake）一直以来都比较火，尤其是越来越多的公司开始产生单机搞不定的数据量，数据湖成为了一个必要的基础设施。现在市面上有很多</description></item><item><title>最终幻想14文件结构分析(2)</title><link>https://blog.cerrorism.com/post/2020-10-25/</link><pubDate>Sun, 25 Oct 2020 08:54:48 -0700</pubDate><guid>https://blog.cerrorism.com/post/2020-10-25/</guid><description>基本概念 我们可以想象最终幻想14的数据是一个大型的目录结构，其中分门别类地存储了游戏需要的各种资源，比如着色器，贴图，模型，对话文本信息等等</description></item><item><title>最终幻想14文件结构分析(1)</title><link>https://blog.cerrorism.com/post/2020-10-04/</link><pubDate>Sun, 04 Oct 2020 21:58:02 -0700</pubDate><guid>https://blog.cerrorism.com/post/2020-10-04/</guid><description>闲来无事，纯粹出于好奇，我决定研究一下FF14的数据文件。其实主要原因是偶然看到国际服有开源的汉化工具，利用了国服FF14的数 据文件来汉化国</description></item><item><title>新的个人博客</title><link>https://blog.cerrorism.com/post/2020-09-27/</link><pubDate>Sun, 27 Sep 2020 11:51:40 -0700</pubDate><guid>https://blog.cerrorism.com/post/2020-09-27/</guid><description>最近我升级了之前的个人博客，使用最新的Hugo版本，并且将博客托管到了Netlify上。之前直接使用S3托管有诸多不便，需要我手动配置S3/</description></item></channel></rss>
