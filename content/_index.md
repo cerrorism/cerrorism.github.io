@@ -1,3 +1,6 @@
-# 心之所向
+---
+title: Cerror's Blog
+subtitle: "A blog about programming, technology, and life."
+---
 
-欢迎来到我的博客
+Welcome to my personal blog.
