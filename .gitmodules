@@ -1,6 +1,0 @@
-[submodule "themes/even"]
-	path = themes/even
-	url = https://github.com/olOwOlo/hugo-theme-even
-[submodule "themes/hugo-bootstrap-5"]
-	path = themes/hugo-bootstrap-5
-	url = https://github.com/cerrorism/hugo-bootstrap-5.git
