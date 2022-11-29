@@ -1,0 +1,9 @@
+[submodule "themes/hugo-bootstrap-5"]
+	path = themes/hugo-bootstrap-5
+	url = https://github.com/cerrorism/hugo-bootstrap-5.git
+[submodule "startbootstrap-clean-blog"]
+	path = startbootstrap-clean-blog
+	url = https://github.com/StartBootstrap/startbootstrap-clean-blog.git
+[submodule "themes/startbootstrap-clean-blog"]
+	path = themes/startbootstrap-clean-blog
+	url = https://github.com/StartBootstrap/startbootstrap-clean-blog.git
